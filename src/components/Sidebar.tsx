@@ -4,7 +4,7 @@ import { useChatStore } from '@/store/chatStore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AddChannelDialog } from '@/components/AddChannelDialog';
+import { CreateChannelDialog } from '@/components/CreateChannelDialog';
 import { EditWorkspaceDialog } from '@/components/EditWorkspaceDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 
@@ -54,22 +54,32 @@ export const Sidebar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Plus className="h-4 w-4" />
-                <span className="sr-only">Actions</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                Manage Roles
+                Team
               </DropdownMenuItem>
-              <DropdownMenuItem >Edit</DropdownMenuItem>
-              <DropdownMenuItem>Delete</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
+                Channel
+              </DropdownMenuItem>
+              <DropdownMenuItem>Direct Message</DropdownMenuItem>
+              <DropdownMenuItem>Discussion</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           </div>
         </div>
 
       {/* Dialogs */}
-      <AddChannelDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <CreateChannelDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog}
+        onSuccess={() => {
+          // Refresh channels list
+          const fetchChannels = useChatStore.getState().fetchChannels;
+          if (fetchChannels) fetchChannels();
+        }}
+      />
       <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
 
       {/* Navigation */}
