@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Home, Search, Menu, Plus, Edit, MoreVertical } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Home, Search, Menu, Plus, Edit, MoreVertical, Phone, Video, LogOut } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { Sidebar } from '@/components/Sidebar';
 import { HomeView } from '@/components/HomeView';
@@ -10,11 +11,28 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 export const ChatLayout = () => {
-  const { selectedChannel, isSidebarOpen, toggleSidebar } = useChatStore();
+  const navigate = useNavigate();
+  const { selectedChannel, isSidebarOpen, toggleSidebar, startCall, logout, user } = useChatStore();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+
+  const handleStartVoiceCall = () => {
+    startCall('voice');
+    navigate('/voice-call');
+  };
+
+  const handleStartVideoCall = () => {
+    startCall('video');
+    navigate('/video-call');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -83,11 +101,47 @@ export const ChatLayout = () => {
             </Button>
           </div>
 
-          {selectedChannel && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{selectedChannel.name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {selectedChannel && (
+              <>
+                <span className="text-sm font-medium">{selectedChannel.name}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleStartVoiceCall}
+                  title="Start voice call"
+                >
+                  <Phone className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleStartVideoCall}
+                  title="Start video call"
+                >
+                  <Video className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="ml-2">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled>
+                  <span className="text-xs text-muted-foreground">{user?.email}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         {/* Content Area */}
