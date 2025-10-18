@@ -1,8 +1,10 @@
 import { Users, Hash, FolderOpen, Smartphone, Monitor, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 
 export const HomeView = () => {
+  const navigate = useNavigate();
   return (
     <div className="h-full overflow-y-auto bg-chat-bg p-6">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -27,7 +29,7 @@ export const HomeView = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="default" className="w-full">
+                <Button variant="default" className="w-full" onClick={() => navigate('/users')}>
                   Add users
                 </Button>
               </CardContent>

@@ -13,10 +13,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { useAuthStore } from '@/store/authStore';
 
 export const ChatLayout = () => {
   const navigate = useNavigate();
-  const { selectedChannel, isSidebarOpen, toggleSidebar, startCall, logout, user } = useChatStore();
+  const { selectedChannel, isSidebarOpen, toggleSidebar, startCall, user } = useChatStore();
+  const {logout} = useAuthStore()
+  console.log(user)
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const handleStartVoiceCall = () => {
@@ -127,7 +130,8 @@ export const ChatLayout = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="ml-2">
-                  <MoreVertical className="h-4 w-4" />
+                  {/* <MoreVertical className="h-4 w-4" /> */}
+                  <LogOut className="mr-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
