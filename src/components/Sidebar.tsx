@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AddChannelDialog } from '@/components/AddChannelDialog';
 import { EditWorkspaceDialog } from '@/components/EditWorkspaceDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 
 export const Sidebar = () => {
   const { channels, selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
@@ -38,26 +39,34 @@ export const Sidebar = () => {
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
         <h2 className="text-lg font-semibold text-foreground">{workspaceName}</h2>
         <div className="flex gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8"
             onClick={() => setShowEditDialog(true)}
             title="Edit workspace"
           >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8"
-            onClick={() => setShowAddDialog(true)}
-            title="Add new channel"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          
+
+          <DropdownMenu >
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Plus className="h-4 w-4" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                Manage Roles
+              </DropdownMenuItem>
+              <DropdownMenuItem >Edit</DropdownMenuItem>
+              <DropdownMenuItem>Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          </div>
         </div>
-      </div>
 
       {/* Dialogs */}
       <AddChannelDialog open={showAddDialog} onOpenChange={setShowAddDialog} />

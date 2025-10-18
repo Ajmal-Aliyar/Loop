@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NewUserForm } from '@/components/NewUserForm';
+import { ManageUserRolesDialog } from '@/components/ManageUserRolesDialog';
 import {
     Table,
     TableBody,
@@ -22,41 +24,125 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Mail, MoreVertical, Plus, Search, UserPlus } from 'lucide-react';
+import { Mail, Menu, MoreVertical, Search, UserPlus } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { useChatStore } from '@/store/chatStore';
-
-interface User {
-    id: string;
-    name: string;
-    username: string;
-    status: 'Active' | 'Pending' | 'Deactivated';
-    avatar: string;
-}
+import { useToast } from '@/hooks/use-toast';
+import { userService } from '@/api/users/user.service';
+import { roleService } from '@/api/roles/role.service';
+import type { User } from '@/api/users/user.types';
+import type { Role } from '@/api/roles/role.types';
+import { InviteUserDialog } from '@/components/InviteUserDialog';
 
 const Users = () => {
+    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState('all');
+    const [showInvite, setShowInvite] = useState<boolean>(false);
+    const [showNewUser, setShowNewUser] = useState<boolean>(false);
+    const [editUser, setEditUser] = useState<User | undefined>(undefined);
+    const [manageRolesUser, setManageRolesUser] = useState<User | undefined>(undefined);
     const { isSidebarOpen, toggleSidebar } = useChatStore();
+    const [users, setUsers] = useState<User[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [offset, setOffset] = useState(0);
+    const [count, setCount] = useState(25);
 
-    const users: User[] = [
-        { id: '1', name: 'Ajmal Aju', username: 'ajmal_cxbrx', status: 'Active', avatar: 'A' },
-        { id: '2', name: 'Ajmal Aju', username: 'ajmalcxbrx', status: 'Active', avatar: 'A' },
-        { id: '3', name: 'Hello World', username: 'helloworld', status: 'Active', avatar: 'H' },
-        { id: '4', name: 'One', username: 'one', status: 'Pending', avatar: 'O' },
-        { id: '5', name: 'Rocket Cat', username: 'rocket.cat', status: 'Deactivated', avatar: 'R' },
-        { id: '6', name: 'User A', username: 'usera', status: 'Active', avatar: 'U' },
-        { id: '7', name: 'Two', username: 'two', status: 'Active', avatar: 'T' },
-    ];
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const response = await userService.getUserList({
+                count,
+                offset,
+                query: searchQuery ? {
+                    $or: [
+                        { name: { $regex: searchQuery, $options: 'i' } },
+                        { username: { $regex: searchQuery, $options: 'i' } },
+                    ]
+                } : undefined,
+            });
+            
+            if (response.success) {
+                setUsers(response.users);
+                setTotal(response.total);
+            }
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch users',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        try {
+            const response = await userService.deleteUser({ userId });
+            if (response.success) {
+                toast({
+                    title: 'Success',
+                    description: 'User deleted successfully',
+                });
+                fetchUsers();
+            }
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to delete user',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleUpdateUser = async (userId: string, data: any) => {
+        try {
+            const response = await userService.updateUser({
+                userId,
+                data
+            });
+            if (response.success) {
+                toast({
+                    title: 'Success',
+                    description: 'User updated successfully',
+                });
+                fetchUsers();
+            }
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to update user',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const fetchRoles = async () => {
+        try {
+            const response = await roleService.listRoles();
+            if (response.success) {
+                setRoles(response.roles);
+            }
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch roles',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+        fetchRoles();
+    }, [searchQuery, selectedRole, offset, count]);
 
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.username.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = selectedRole === 'all' ||
-            (selectedRole === 'active' && user.status === 'Active') ||
-            (selectedRole === 'pending' && user.status === 'Pending') ||
-            (selectedRole === 'deactivated' && user.status === 'Deactivated');
-        return matchesSearch && matchesRole;
+        if (selectedRole === 'all') return true;
+        return user.roles?.includes(selectedRole);
     });
 
     return (
@@ -68,17 +154,33 @@ const Users = () => {
                 />
             )}
             <Sidebar />
-            <div className="p-6 space-y-6 overflow-auto">
+            <div className="p-6 space-y-6 overflow-auto w-full">
 
                 {/* Header */}
                 <div className="flex justify-between items-center">
+                    <div className='flex items-center gap-3'>
+                    <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={toggleSidebar}
+                                  className="lg:hidden"
+                                >
+                                  <Menu className="h-5 w-5" />
+                                </Button>
                     <h1 className="text-2xl font-semibold">Users</h1>
+
+                    </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => setShowInvite(true)}>
                             <Mail className="h-4 w-4 mr-2" />
                             Invite
                         </Button>
-                        <Button size="sm">
+                        <InviteUserDialog 
+                            open={showInvite}
+                            onClose={() => setShowInvite(false)}
+                            onSuccess={fetchUsers}
+                        />
+                        <Button size="sm" onClick={() => setShowNewUser(true)}>
                             <UserPlus className="h-4 w-4 mr-2" />
                             New user
                         </Button>
@@ -93,11 +195,11 @@ const Users = () => {
                     </Button>
                     <Button variant="ghost" className={selectedRole === 'pending' ? 'border-b-2 border-primary rounded-none' : 'rounded-none'}
                         onClick={() => setSelectedRole('pending')}>
-                        Pending (0)
+                        Pending ({users.filter(u => !u.active).length})
                     </Button>
                     <Button variant="ghost" className={selectedRole === 'active' ? 'border-b-2 border-primary rounded-none' : 'rounded-none'}
                         onClick={() => setSelectedRole('active')}>
-                        Active
+                        Active ({users.filter(u => u.active).length})
                     </Button>
                     <Button variant="ghost" className={selectedRole === 'deactivated' ? 'border-b-2 border-primary rounded-none' : 'rounded-none'}
                         onClick={() => setSelectedRole('deactivated')}>
@@ -122,9 +224,11 @@ const Users = () => {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All roles</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="deactivated">Deactivated</SelectItem>
+                            {roles.map((role) => (
+                                <SelectItem key={role._id} value={role._id}>
+                                    {role.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -136,17 +240,17 @@ const Users = () => {
                             <TableRow>
                                 <TableHead className="w-[300px]">Name</TableHead>
                                 <TableHead>Username</TableHead>
-                                <TableHead>Registration status</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead className="w-[100px]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredUsers.map((user) => (
-                                <TableRow key={user.id}>
+                                <TableRow key={user._id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                                {user.avatar}
+                                                {user.avatarUrl}
                                             </div>
                                             {user.name}
                                         </div>
@@ -154,11 +258,9 @@ const Users = () => {
                                     <TableCell>{user.username}</TableCell>
                                     <TableCell>
                                         <span className={
-                                            user.status === 'Active' ? 'text-green-500' :
-                                                user.status === 'Pending' ? 'text-yellow-500' :
-                                                    'text-red-500'
+                                            user.status === 'offline' ? 'text-red-500' : user.status === 'online' ? 'text-green-500' : 'text-yellow-500'
                                         }>
-                                            {user.status}
+                                            {user?.status}
                                         </span>
                                     </TableCell>
                                     <TableCell>
@@ -170,12 +272,28 @@ const Users = () => {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem>Delete</DropdownMenuItem>
-                                                {user.status === 'Active' ? (
-                                                    <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setManageRolesUser(user)}>
+                                                    Manage Roles
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => {
+                                                    setEditUser(user);
+                                                    setShowNewUser(true);
+                                                }}>Edit</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteUser(user._id)}>Delete</DropdownMenuItem>
+                                                {user.active ? (
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleUpdateUser(user._id, { active: false })}
+                                                        className="text-red-600"
+                                                    >
+                                                        Deactivate
+                                                    </DropdownMenuItem>
                                                 ) : (
-                                                    <DropdownMenuItem className="text-green-600">Activate</DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleUpdateUser(user._id, { active: true })}
+                                                        className="text-green-600"
+                                                    >
+                                                        Activate
+                                                    </DropdownMenuItem>
                                                 )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -190,9 +308,15 @@ const Users = () => {
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                         Items per page:
-                        <Select defaultValue="25">
+                        <Select 
+                            value={count.toString()} 
+                            onValueChange={(value) => {
+                                setCount(Number(value));
+                                setOffset(0);
+                            }}
+                        >
                             <SelectTrigger className="w-[70px] ml-2">
-                                <SelectValue placeholder="25" />
+                                <SelectValue placeholder={count.toString()} />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="25">25</SelectItem>
@@ -203,19 +327,51 @@ const Users = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                            Showing results 1 - 7 of 7
+                            Showing results {offset + 1} - {Math.min(offset + count, total)} of {total}
                         </span>
                         <div className="flex">
-                            <Button variant="outline" size="icon" disabled>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                disabled={offset === 0}
+                                onClick={() => setOffset(prev => Math.max(0, prev - count))}
+                            >
                                 {"<"}
                             </Button>
-                            <Button variant="outline" size="icon" disabled>
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                disabled={offset + count >= total}
+                                onClick={() => setOffset(prev => prev + count)}
+                            >
                                 {">"}
                             </Button>
                         </div>
                     </div>
                 </div>
-            </div></div>
+            </div>
+            
+            <NewUserForm 
+                isOpen={showNewUser}
+                onClose={() => {
+                    setShowNewUser(false);
+                    setEditUser(undefined);
+                }}
+                onSuccess={fetchUsers}
+                className="w-[400px]"
+                editUser={editUser}
+            />
+
+            {/* Manage Roles Dialog */}
+            {manageRolesUser && (
+                <ManageUserRolesDialog
+                    open={!!manageRolesUser}
+                    onClose={() => setManageRolesUser(undefined)}
+                    onSuccess={fetchUsers}
+                    user={manageRolesUser}
+                />
+            )}
+        </div>
     );
 };
 

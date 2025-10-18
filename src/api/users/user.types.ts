@@ -14,7 +14,7 @@ export interface User {
   avatarUrl?: string;
   bio?: string;
   joinDefaultChannels?: boolean;
-  statusText?: string;
+  status?: string;
   roles?: string[];
 }
 

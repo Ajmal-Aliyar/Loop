@@ -16,11 +16,11 @@ import {
 class UserService {
   /**
    * Create a new user
-   * POST /api/v1/users.create
+   * POST /users.create
    */
   async createUser(payload: CreateUserRequest): Promise<CreateUserResponse> {
     const { data } = await axiosInstance.post<CreateUserResponse>(
-      "/api/v1/users.create",
+      "/users.create",
       payload
     );
     return data;
@@ -28,11 +28,11 @@ class UserService {
 
   /**
    * Update user details
-   * POST /api/v1/users.update
+   * POST /users.update
    */
   async updateUser(payload: UpdateUserRequest): Promise<UpdateUserResponse> {
     const { data } = await axiosInstance.post<UpdateUserResponse>(
-      "/api/v1/users.update",
+      "/users.update",
       payload
     );
     return data;
@@ -40,11 +40,11 @@ class UserService {
 
   /**
    * Get user info by userId or username
-   * GET /api/v1/users.info
+   * GET /users.info
    */
   async getUserInfo(params: GetUserInfoParams): Promise<GetUserInfoResponse> {
     const { data } = await axiosInstance.get<GetUserInfoResponse>(
-      "/api/v1/users.info",
+      "/users.info",
       { params }
     );
     return data;
@@ -52,11 +52,11 @@ class UserService {
 
   /**
    * Get all users (supports pagination and filtering)
-   * GET /api/v1/users.list
+   * GET /users.list
    */
   async getUserList(params?: GetUserListParams): Promise<GetUserListResponse> {
     const { data } = await axiosInstance.get<GetUserListResponse>(
-      "/api/v1/users.list",
+      "/users.list",
       { params }
     );
     return data;
@@ -64,11 +64,11 @@ class UserService {
 
   /**
    * Delete a user
-   * POST /api/v1/users.delete
+   * POST /users.delete
    */
   async deleteUser(payload: DeleteUserRequest): Promise<DeleteUserResponse> {
     const { data } = await axiosInstance.post<DeleteUserResponse>(
-      "/api/v1/users.delete",
+      "/users.delete",
       payload
     );
     return data;
