@@ -47,15 +47,23 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        chat: {
+          sidebar: "hsl(var(--sidebar-bg))",
+          "sidebar-hover": "hsl(var(--sidebar-item-hover))",
+          "sidebar-active": "hsl(var(--sidebar-item-active))",
+          bg: "hsl(var(--chat-bg))",
+          input: "hsl(var(--message-input))",
+        },
+        avatar: {
+          green: "hsl(var(--avatar-green))",
+          yellow: "hsl(var(--avatar-yellow))",
+          blue: "hsl(var(--avatar-blue))",
+          pink: "hsl(var(--avatar-pink))",
+        },
+        status: {
+          online: "hsl(var(--status-online))",
+          away: "hsl(var(--status-away))",
+          busy: "hsl(var(--status-busy))",
         },
       },
       borderRadius: {
