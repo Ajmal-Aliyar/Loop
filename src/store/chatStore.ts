@@ -24,6 +24,7 @@ interface ChatState {
   isSidebarOpen: boolean;
   isInCall: boolean;
   callType: 'voice' | 'video' | null;
+  workspaceName: string;
   setUser: (user: User | null) => void;
   logout: () => void;
   setSelectedChannel: (channel: Channel | null) => void;
@@ -31,6 +32,8 @@ interface ChatState {
   setSidebarOpen: (open: boolean) => void;
   startCall: (type: 'voice' | 'video') => void;
   endCall: () => void;
+  addChannel: (channel: Channel) => void;
+  setWorkspaceName: (name: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -41,6 +44,7 @@ export const useChatStore = create<ChatState>()(
       isSidebarOpen: true,
       isInCall: false,
       callType: null,
+      workspaceName: 'Omnichannel',
       channels: [
         { id: '1', name: 'python', type: 'team', avatar: 'P', color: 'green' },
         { id: '2', name: 'Test', type: 'discussion', avatar: 'P', color: 'green' },
@@ -56,10 +60,12 @@ export const useChatStore = create<ChatState>()(
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
       startCall: (type) => set({ isInCall: true, callType: type }),
       endCall: () => set({ isInCall: false, callType: null }),
+      addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
+      setWorkspaceName: (name) => set({ workspaceName: name }),
     }),
     {
       name: 'chat-storage',
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ user: state.user, channels: state.channels, workspaceName: state.workspaceName }),
     }
   )
 );

@@ -1,11 +1,16 @@
-import { Hash, MessageSquare, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Hash, MessageSquare, Users, Edit, Plus } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AddChannelDialog } from '@/components/AddChannelDialog';
+import { EditWorkspaceDialog } from '@/components/EditWorkspaceDialog';
 
 export const Sidebar = () => {
-  const { channels, selectedChannel, setSelectedChannel, isSidebarOpen } = useChatStore();
+  const { channels, selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const teams = channels.filter(c => c.type === 'team');
   const discussions = channels.filter(c => c.type === 'discussion');
@@ -31,16 +36,32 @@ export const Sidebar = () => {
     >
       {/* Workspace Header */}
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <h2 className="text-lg font-semibold text-foreground">Omnichannel</h2>
+        <h2 className="text-lg font-semibold text-foreground">{workspaceName}</h2>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={() => setShowEditDialog(true)}
+            title="Edit workspace"
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={() => setShowAddDialog(true)}
+            title="Add new channel"
+          >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <AddChannelDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
 
       {/* Navigation */}
       <ScrollArea className="flex-1">
@@ -183,6 +204,3 @@ export const Sidebar = () => {
     </aside>
   );
 };
-
-// Missing imports
-import { Edit, Plus } from 'lucide-react';
