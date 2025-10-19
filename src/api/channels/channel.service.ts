@@ -9,6 +9,7 @@ import {
   IChannelHistoryParams,
   IChannelListParams,
   IChannelResponse,
+  JoinedChannelsResponse,
 } from "@/api/channels/channel.types";
 
 class ChannelService {
@@ -74,6 +75,22 @@ class ChannelService {
     const res = await axiosInstance.get("/channels.list", { params });
     return res.data;
   }
+
+
+  /** 📚 List all channels the authenticated user has joined */
+  async listJoinedChannels(
+    offset?: number,
+    count?: number,
+    sort?: Record<string, 1 | -1>,
+    query?: Record<string, any>,
+    fields?: Record<string, 0 | 1>
+  ): Promise<JoinedChannelsResponse> {
+    const response = await axiosInstance.get("/channels.list.joined", {
+      params: { offset, count, sort, query, fields },
+    });
+    return response.data;
+  }
+
 }
 
 export const channelService = new ChannelService();

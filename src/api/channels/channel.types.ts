@@ -92,3 +92,43 @@ export interface IChannelListParams {
   query?: string;
   fields?: string;
 }
+
+// ---- Joined Channels ----
+
+export interface JoinedChannel {
+  _id: string;
+  fname: string;
+  customFields?: Record<string, any>;
+  description?: string;
+  broadcast: boolean;
+  encrypted: boolean;
+  federated?: boolean;
+  name: string;
+  t: string; // channel type: 'c' (public), 'p' (private), 'd' (direct)
+  msgs: number;
+  usersCount: number;
+  u: {
+    _id: string;
+    username: string;
+    name?: string;
+  };
+  ts: string;
+  ro: boolean;
+  default: boolean;
+  sysMes: boolean;
+  _updatedAt: string;
+  lm?: string;
+  lastMessage?: Record<string, any>;
+  topic?: string;
+  muted?: { _id: string; username?: string }[];
+  unmuted?: string[];
+}
+
+export interface JoinedChannelsResponse {
+  channels: JoinedChannel[];
+  offset: number;
+  count: number;
+  total: number;
+  success: boolean;
+}
+

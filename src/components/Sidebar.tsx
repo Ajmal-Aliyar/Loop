@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CreateChannelDialog } from '@/components/CreateChannelDialog';
 import { EditWorkspaceDialog } from '@/components/EditWorkspaceDialog';
+import { JoinedChannelsDialog } from '@/components/JoinedChannelsDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import type { IChannel } from '@/api/channels/channel.types';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ export const Sidebar = () => {
   const { channels: apiChannels, loading, initializeChannels } = useChannelStore();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showJoinedChannelsDialog, setShowJoinedChannelsDialog] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
   const navigate = useNavigate();
   const {logout} = useAuthStore()
@@ -107,8 +109,29 @@ export const Sidebar = () => {
           const fetchChannels = useChannelStore.getState().fetchChannels;
           if (fetchChannels) fetchChannels();
         }}
-      />
-      <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+       />
+       <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+       <JoinedChannelsDialog 
+         open={showJoinedChannelsDialog} 
+         onOpenChange={setShowJoinedChannelsDialog}
+         onChannelSelect={(channel) => {
+           // Map the joined channel to UI format and set as selected
+           const mappedChannel = {
+             id: channel._id,
+             name: channel.fname || channel.name,
+             type: (channel.t === 'c' ? 'channel' : channel.t === 'p' ? 'channel' : 'channel') as 'channel' | 'team' | 'discussion' | 'direct',
+             avatar: channel.name.charAt(0).toUpperCase(),
+             color: getChannelColor(channel.name),
+             unread: 0,
+             owner: channel.u?.name || channel.u?.username || 'Unknown',
+             status: undefined as 'online' | 'away' | 'busy' | undefined,
+             topic: channel.topic,
+             usersCount: channel.usersCount,
+             isPrivate: channel.t === 'p',
+           };
+           setSelectedChannel(mappedChannel);
+         }}
+       />
 
       <div className="flex items-center gap-3 p-1">
         <Button variant="ghost" size="icon" className="flex" onClick={() => {
@@ -117,9 +140,14 @@ export const Sidebar = () => {
           }}>
           <Home className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon">
-          <Search className="h-5 w-5" />
-        </Button>
+         <Button 
+           variant="ghost" 
+           size="icon" 
+           onClick={() => setShowJoinedChannelsDialog(true)}
+           title="View joined channels"
+         >
+           <Search className="h-5 w-5" />
+         </Button>
 
         <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
           <DropdownMenuTrigger asChild>
