@@ -8,6 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { channelService } from '@/api/channels/channel.service';
 import { Textarea } from './ui/textarea';
 import { ComboboxDemo } from './ui/combobox';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
+import type { User } from '@/api/users/user.types';
 
 interface CreateChannelDialogProps {
     open: boolean;
@@ -21,7 +24,7 @@ export function CreateChannelDialog({ open, onOpenChange, onSuccess }: CreateCha
     const [formData, setFormData] = useState({
         name: '',
         topic: '',
-        members: [] as string[],
+        members: [] as User[],
         isPrivate: false,
     });
 
@@ -57,7 +60,7 @@ export function CreateChannelDialog({ open, onOpenChange, onSuccess }: CreateCha
             setLoading(true);
             const response = await channelService.createChannel({
                 name: formData.name,
-                members: formData.members,
+                members: formData.members.map(user => user._id),
                 extraData: {
                     topic: formData.topic,
                 },
@@ -126,12 +129,28 @@ export function CreateChannelDialog({ open, onOpenChange, onSuccess }: CreateCha
                     <div className="space-y-2">
                         <Label>Members</Label>
                         <ComboboxDemo 
-                            onSelect={(value) => {
-                                if (!formData.members.includes(value)) {
-                                    handleChange('members', [...formData.members, value]);
+                            onSelect={(user) => {
+                                if (!formData.members.find(member => member._id === user._id)) {
+                                    handleChange('members', [...formData.members, user]);
                                 }
                             }}
+                            selectedUserIds={formData.members.map(user => user._id)}
                         />
+                        {formData.members.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {formData.members.map((user) => (
+                                    <Badge key={user._id} variant="secondary" className="flex items-center gap-1">
+                                        <span>{user.name || user.username}</span>
+                                        <X 
+                                            className="h-3 w-3 cursor-pointer" 
+                                            onClick={() => {
+                                                handleChange('members', formData.members.filter(member => member._id !== user._id));
+                                            }}
+                                        />
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center justify-between">

@@ -45,6 +45,7 @@ export interface ICreateChannelBody {
   excludeSelf?: boolean;
   customFields?: Record<string, any>;
   extraData?: {
+    topic?: string;
     broadcast?: boolean;
     encrypted?: boolean;
     teamId?: string;

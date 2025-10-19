@@ -14,37 +14,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-
-const users = [
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-]
+import { useUserStore } from "@/store/userStore"
+import type { User } from "@/api/users/user.types"
 
 interface ComboboxProps {
-  onSelect: (value: string) => void;
+  onSelect: (user: User) => void;
+  selectedUserIds?: string[];
 }
 
-export function ComboboxDemo({ onSelect }: ComboboxProps) {
+export function ComboboxDemo({ onSelect, selectedUserIds = [] }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
+  const { users, loading, fetchUsers } = useUserStore()
+
+  // Fetch users when component mounts
+  React.useEffect(() => {
+    if (users.length === 0) {
+      fetchUsers()
+    }
+  }, [users.length, fetchUsers])
+
+  const filteredUsers = users.filter(user => 
+    !selectedUserIds.includes(user._id)
+  )
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,10 +45,9 @@ export function ComboboxDemo({ onSelect }: ComboboxProps) {
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={loading}
         >
-          {value
-            ? users.find((user) => user.value === value)?.label
-            : "Add people..."}
+          {loading ? "Loading users..." : "Add people..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -66,23 +56,24 @@ export function ComboboxDemo({ onSelect }: ComboboxProps) {
           <CommandInput placeholder="Search people..." />
           <CommandEmpty>No user found.</CommandEmpty>
           <CommandGroup>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <CommandItem
-                key={user.value}
-                value={user.value}
-                onSelect={(currentValue) => {
-                  setValue(currentValue === value ? "" : currentValue)
+                key={user._id}
+                value={user.username}
+                onSelect={() => {
                   setOpen(false)
-                  onSelect(currentValue)
+                  onSelect(user)
                 }}
               >
                 <Check
                   className={cn(
-                    "mr-2 h-4 w-4",
-                    value === user.value ? "opacity-100" : "opacity-0"
+                    "mr-2 h-4 w-4 opacity-0"
                   )}
                 />
-                {user.label}
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.name || user.username}</span>
+                  <span className="text-xs text-muted-foreground">@{user.username}</span>
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

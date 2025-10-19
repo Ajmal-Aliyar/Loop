@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Hash, MessageSquare, Users, Edit, Plus } from 'lucide-react';
+import { Hash, MessageSquare, Users, Edit, Plus, MessageCircle } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
+import { useChannelStore } from '@/store/channelStore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +13,7 @@ export const Sidebar = () => {
   const { channels, selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [openMenu, setOpenMenu] = useState(false);
 
   const teams = channels.filter(c => c.type === 'team');
   const discussions = channels.filter(c => c.type === 'discussion');
@@ -48,25 +50,24 @@ export const Sidebar = () => {
           >
             <Edit className="h-4 w-4" />
           </Button>
-          
 
-          <DropdownMenu >
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                Team
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
-                Channel
-              </DropdownMenuItem>
-              <DropdownMenuItem>Direct Message</DropdownMenuItem>
-              <DropdownMenuItem>Discussion</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setOpenMenu(p => !p)}
+            title="Edit workspace"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+
+           { openMenu && <div className='absolute -right-[100%] -translate-x-[58%] top-[30px] bg-chat-sidebar p-1 rounded-md border border-chat-sidebar-hover font-normal text-sm space-y-2'>
+            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><Users size={14} /> <p>Team</p></div>
+            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer' onClick={() => { setShowAddDialog(true); setOpenMenu(false); }}><Hash size={14} /> <p>Channel</p></div>
+            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><MessageSquare size={14} /> <p>Direct Message</p></div>
+            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><MessageCircle size={14} /> <p>Discussion</p></div>
+           </div>}
+
           </div>
         </div>
 
@@ -76,7 +77,7 @@ export const Sidebar = () => {
         onOpenChange={setShowAddDialog}
         onSuccess={() => {
           // Refresh channels list
-          const fetchChannels = useChatStore.getState().fetchChannels;
+          const fetchChannels = useChannelStore.getState().fetchChannels;
           if (fetchChannels) fetchChannels();
         }}
       />
@@ -209,17 +210,6 @@ export const Sidebar = () => {
           </div>
         </div>
       </ScrollArea>
-
-      {/* Footer */}
-      <div className="border-t border-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-avatar-pink">rocket.chat</span>
-            <span className="text-xs text-muted-foreground">Powered by Rocket.Chat</span>
-            <span className="text-xs text-muted-foreground">Community</span>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 };
