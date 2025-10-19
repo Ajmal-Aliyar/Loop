@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Hash, MessageSquare, Users, Edit, Plus, MessageCircle, Home, Search, MoreVertical, LogOut } from 'lucide-react';
+import { Hash, MessageSquare, Users, Edit, Plus, Home, Search, MoreVertical, LogOut } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useChannelStore } from '@/store/channelStore';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ import type { IChannel } from '@/api/channels/channel.types';
 import { useNavigate } from 'react-router-dom';
 import { DropdownMenuSeparator } from './ui/dropdown-menu';
 import { useAuthStore } from '@/store/authStore';
+import { CreateTeamDialog } from './CreateTeamDialog';
+import { useTeamStore } from '@/store/teamStore';
 
 export const Sidebar = () => {
   const { selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
@@ -20,14 +22,17 @@ export const Sidebar = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showJoinedChannelsDialog, setShowJoinedChannelsDialog] = useState(false);
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  const { teams, loading: teamsLoading, fetchTeams, addTeam } = useTeamStore();
   const [openMenu, setOpenMenu] = useState(false);
   const navigate = useNavigate();
-  const {logout} = useAuthStore()
-  
+  const { logout } = useAuthStore()
+
   // Initialize channels when component mounts
   useEffect(() => {
     initializeChannels();
-  }, [initializeChannels]);
+    fetchTeams();
+  }, [initializeChannels, fetchTeams]);
 
   // Helper function to map API channel to UI format
   const mapChannelToUI = (channel: IChannel) => ({
@@ -44,6 +49,7 @@ export const Sidebar = () => {
     isPrivate: channel.t === 'p',
   });
 
+
   // Helper function to get consistent colors for channels
   const getChannelColor = (name: string): 'green' | 'yellow' | 'blue' | 'pink' => {
     const colors = ['green', 'yellow', 'blue', 'pink'];
@@ -56,8 +62,6 @@ export const Sidebar = () => {
 
   // Map API channels to UI format
   const channels = apiChannels.map(mapChannelToUI);
-
-  const teams = channels.filter(c => c.type === 'team');
   const discussions = channels.filter(c => c.type === 'discussion');
   const channelsList = channels.filter(c => c.type === 'channel');
   const directMessages = channels.filter(c => c.type === 'direct');
@@ -109,45 +113,53 @@ export const Sidebar = () => {
           const fetchChannels = useChannelStore.getState().fetchChannels;
           if (fetchChannels) fetchChannels();
         }}
-       />
-       <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
-       <JoinedChannelsDialog 
-         open={showJoinedChannelsDialog} 
-         onOpenChange={setShowJoinedChannelsDialog}
-         onChannelSelect={(channel) => {
-           // Map the joined channel to UI format and set as selected
-           const mappedChannel = {
-             id: channel._id,
-             name: channel.fname || channel.name,
-             type: (channel.t === 'c' ? 'channel' : channel.t === 'p' ? 'channel' : 'channel') as 'channel' | 'team' | 'discussion' | 'direct',
-             avatar: channel.name.charAt(0).toUpperCase(),
-             color: getChannelColor(channel.name),
-             unread: 0,
-             owner: channel.u?.name || channel.u?.username || 'Unknown',
-             status: undefined as 'online' | 'away' | 'busy' | undefined,
-             topic: channel.topic,
-             usersCount: channel.usersCount,
-             isPrivate: channel.t === 'p',
-           };
-           setSelectedChannel(mappedChannel);
-         }}
-       />
+      />
+      <CreateTeamDialog
+        open={showCreateTeamDialog}
+        onOpenChange={setShowCreateTeamDialog}
+        onSuccess={(newTeam) => {
+          console.log('New team created:', newTeam);
+          addTeam(newTeam);
+        }}
+      />
+      <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+      <JoinedChannelsDialog
+        open={showJoinedChannelsDialog}
+        onOpenChange={setShowJoinedChannelsDialog}
+        onChannelSelect={(channel) => {
+          // Map the joined channel to UI format and set as selected
+          const mappedChannel = {
+            id: channel._id,
+            name: channel.fname || channel.name,
+            type: (channel.t === 'c' ? 'channel' : channel.t === 'p' ? 'channel' : 'channel') as 'channel' | 'team' | 'discussion' | 'direct',
+            avatar: channel.name.charAt(0).toUpperCase(),
+            color: getChannelColor(channel.name),
+            unread: 0,
+            owner: channel.u?.name || channel.u?.username || 'Unknown',
+            status: undefined as 'online' | 'away' | 'busy' | undefined,
+            topic: channel.topic,
+            usersCount: channel.usersCount,
+            isPrivate: channel.t === 'p',
+          };
+          setSelectedChannel(mappedChannel);
+        }}
+      />
 
       <div className="flex items-center gap-3 p-1">
         <Button variant="ghost" size="icon" className="flex" onClick={() => {
           setSelectedChannel(null)
           navigate('/')
-          }}>
+        }}>
           <Home className="h-5 w-5" />
         </Button>
-         <Button 
-           variant="ghost" 
-           size="icon" 
-           onClick={() => setShowJoinedChannelsDialog(true)}
-           title="View joined channels"
-         >
-           <Search className="h-5 w-5" />
-         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowJoinedChannelsDialog(true)}
+          title="View joined channels"
+        >
+          <Search className="h-5 w-5" />
+        </Button>
 
         <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
           <DropdownMenuTrigger asChild>
@@ -169,8 +181,14 @@ export const Sidebar = () => {
                 setOpenMenu(false);
               }}>Channel</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span className="text-sm">Team</span>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault(); // stops default menu behavior if needed
+                setShowCreateTeamDialog(true);
+                setOpenMenu(false);
+              }}
+            >
+              Team
             </DropdownMenuItem>
             <DropdownMenuItem>
               <span className="text-sm">Outbound message</span>
@@ -179,19 +197,19 @@ export const Sidebar = () => {
         </DropdownMenu>
 
         <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="ml-2">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className='flex items-center'>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="ml-2">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className='flex items-center'>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
 
       </div>
@@ -205,26 +223,45 @@ export const Sidebar = () => {
               Teams
             </h3>
             <div className="space-y-1">
-              {teams.map((channel) => (
-                <button
-                  key={channel.id}
-                  onClick={() => setSelectedChannel(channel)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors",
-                    selectedChannel?.id === channel.id
-                      ? "bg-chat-sidebar-active"
-                      : "hover:bg-chat-sidebar-hover"
-                  )}
-                >
-                  <div className={cn("flex h-8 w-8 items-center justify-center rounded text-sm font-bold text-white", getAvatarBg(channel.color))}>
-                    {channel.avatar}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{channel.name}</span>
-                  </div>
-                </button>
-              ))}
+              {teamsLoading ? (
+                <div className="px-2 py-2 text-sm text-muted-foreground">Loading teams...</div>
+              ) : teams.length === 0 ? (
+                <div className="px-2 py-2 text-sm text-muted-foreground">No teams found</div>
+              ) : (
+                teams.map((team) => (
+                  <button
+                    key={team._id}
+                    onClick={() =>
+                      setSelectedChannel({
+                        id: team._id,
+                        name: team.name,
+                        type: 'team',
+                        avatar: team.name.charAt(0).toUpperCase(),
+                        unread: 0,
+                        owner: team.createdBy.username,
+                        status: undefined,
+                        topic: '',
+                        usersCount: team.numberOfUsers || 0,
+                        isPrivate: team.type === 1,
+                      })
+                    }
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors",
+                      selectedChannel?.id === team._id
+                        ? "bg-chat-sidebar-active"
+                        : "hover:bg-chat-sidebar-hover"
+                    )}
+                  >
+                    <div className={cn("flex h-8 w-8 items-center justify-center rounded text-sm font-bold text-white", getAvatarBg(team.name))}>
+                      {team.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{team.name}</span>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 

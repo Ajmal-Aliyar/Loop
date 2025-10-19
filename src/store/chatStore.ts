@@ -6,9 +6,13 @@ interface Channel {
   name: string;
   type: 'team' | 'discussion' | 'channel' | 'direct';
   avatar: string;
-  color: 'green' | 'yellow' | 'blue' | 'pink';
+  color?: 'green' | 'yellow' | 'blue' | 'pink';
   status?: 'online' | 'away' | 'busy';
   unread?: number;
+  owner?: string;
+  topic?: string;
+  usersCount?: number;
+  isPrivate?: boolean;
 }
 
 interface User {
