@@ -2,9 +2,13 @@ import { Users, Hash, FolderOpen, Smartphone, Monitor, BookOpen } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { CreateChannelDialog } from './CreateChannelDialog';
+import { useChannelStore } from '@/store/channelStore';
 
 export const HomeView = () => {
   const navigate = useNavigate();
+  const [showAddDialog, setShowAddDialog] = useState(false);
   return (
     <div className="h-full overflow-y-auto bg-chat-bg p-6">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -45,12 +49,22 @@ export const HomeView = () => {
                   Create a public channel that new workspace members can join.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent onClick={() => setShowAddDialog(true)}>
                 <Button variant="default" className="w-full">
                   Create channel
                 </Button>
               </CardContent>
             </Card>
+
+            <CreateChannelDialog
+                    open={showAddDialog}
+                    onOpenChange={setShowAddDialog}
+                    onSuccess={() => {
+                      // Refresh channels list
+                      const fetchChannels = useChannelStore.getState().fetchChannels;
+                      if (fetchChannels) fetchChannels();
+                    }}
+                  />
 
             <Card className="bg-card border-border">
               <CardHeader>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Hash, MessageSquare, Users, Edit, Plus, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Hash, MessageSquare, Users, Edit, Plus, MessageCircle, Home, Search, MoreVertical, LogOut } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useChannelStore } from '@/store/channelStore';
 import { cn } from '@/lib/utils';
@@ -8,12 +8,52 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CreateChannelDialog } from '@/components/CreateChannelDialog';
 import { EditWorkspaceDialog } from '@/components/EditWorkspaceDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import type { IChannel } from '@/api/channels/channel.types';
+import { useNavigate } from 'react-router-dom';
+import { DropdownMenuSeparator } from './ui/dropdown-menu';
+import { useAuthStore } from '@/store/authStore';
 
 export const Sidebar = () => {
-  const { channels, selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
+  const { selectedChannel, setSelectedChannel, isSidebarOpen, workspaceName } = useChatStore();
+  const { channels: apiChannels, loading, initializeChannels } = useChannelStore();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [openMenu, setOpenMenu] = useState(false);
+  const navigate = useNavigate();
+  const {logout} = useAuthStore()
+  
+  // Initialize channels when component mounts
+  useEffect(() => {
+    initializeChannels();
+  }, [initializeChannels]);
+
+  // Helper function to map API channel to UI format
+  const mapChannelToUI = (channel: IChannel) => ({
+    id: channel._id,
+    name: channel.fname || channel.name,
+    type: (channel.t === 'c' ? 'channel' : channel.t === 'p' ? 'channel' : 'channel') as 'channel' | 'team' | 'discussion' | 'direct',
+    avatar: channel.name.charAt(0).toUpperCase(),
+    color: getChannelColor(channel.name),
+    unread: 0, // You can implement unread count logic later
+    owner: channel.u?.name || channel.u?.username || 'Unknown',
+    status: undefined as 'online' | 'away' | 'busy' | undefined,
+    topic: channel.topic,
+    usersCount: channel.usersCount,
+    isPrivate: channel.t === 'p',
+  });
+
+  // Helper function to get consistent colors for channels
+  const getChannelColor = (name: string): 'green' | 'yellow' | 'blue' | 'pink' => {
+    const colors = ['green', 'yellow', 'blue', 'pink'];
+    const hash = name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return colors[Math.abs(hash) % colors.length] as 'green' | 'yellow' | 'blue' | 'pink';
+  };
+
+  // Map API channels to UI format
+  const channels = apiChannels.map(mapChannelToUI);
 
   const teams = channels.filter(c => c.type === 'team');
   const discussions = channels.filter(c => c.type === 'discussion');
@@ -28,6 +68,10 @@ export const Sidebar = () => {
       case 'pink': return 'bg-avatar-pink';
       default: return 'bg-muted';
     }
+  };
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
   };
 
   return (
@@ -51,29 +95,12 @@ export const Sidebar = () => {
             <Edit className="h-4 w-4" />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setOpenMenu(p => !p)}
-            title="Edit workspace"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-
-           { openMenu && <div className='absolute -right-[100%] -translate-x-[58%] top-[30px] bg-chat-sidebar p-1 rounded-md border border-chat-sidebar-hover font-normal text-sm space-y-2'>
-            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><Users size={14} /> <p>Team</p></div>
-            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer' onClick={() => { setShowAddDialog(true); setOpenMenu(false); }}><Hash size={14} /> <p>Channel</p></div>
-            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><MessageSquare size={14} /> <p>Direct Message</p></div>
-            <div className='flex items-center gap-1 hover:bg-blue-500 p-2 py-1 rounded-md cursor-pointer'><MessageCircle size={14} /> <p>Discussion</p></div>
-           </div>}
-
-          </div>
         </div>
+      </div>
 
       {/* Dialogs */}
-      <CreateChannelDialog 
-        open={showAddDialog} 
+      <CreateChannelDialog
+        open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSuccess={() => {
           // Refresh channels list
@@ -82,6 +109,64 @@ export const Sidebar = () => {
         }}
       />
       <EditWorkspaceDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+
+      <div className="flex items-center gap-3 p-1">
+        <Button variant="ghost" size="icon" className="flex" onClick={() => {
+          setSelectedChannel(null)
+          navigate('/')
+          }}>
+          <Home className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Search className="h-5 w-5" />
+        </Button>
+
+        <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Plus className="h-5 w-5" />
+
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 cursor-pointer">
+            <DropdownMenuItem>
+              <span className="text-sm">Direct message</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <span className="text-sm">Discussion</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <span className="text-sm" onClick={() => {
+                setShowAddDialog(true);
+                setOpenMenu(false);
+              }}>Channel</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <span className="text-sm">Team</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <span className="text-sm">Outbound message</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="ml-2">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className='flex items-center'>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+
+      </div>
 
       {/* Navigation */}
       <ScrollArea className="flex-1">
@@ -150,26 +235,40 @@ export const Sidebar = () => {
               Channels
             </h3>
             <div className="space-y-1">
-              {channelsList.map((channel) => (
-                <button
-                  key={channel.id}
-                  onClick={() => setSelectedChannel(channel)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors",
-                    selectedChannel?.id === channel.id
-                      ? "bg-chat-sidebar-active"
-                      : "hover:bg-chat-sidebar-hover"
-                  )}
-                >
-                  <div className={cn("flex h-8 w-8 items-center justify-center rounded text-sm font-bold text-white", getAvatarBg(channel.color))}>
-                    {channel.avatar}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{channel.name}</span>
-                  </div>
-                </button>
-              ))}
+              {loading ? (
+                <div className="px-2 py-2 text-sm text-muted-foreground">
+                  Loading channels...
+                </div>
+              ) : channelsList.length === 0 ? (
+                <div className="px-2 py-2 text-sm text-muted-foreground">
+                  No channels found
+                </div>
+              ) : (
+                channelsList.map((channel) => (
+                  <button
+                    key={channel.id}
+                    onClick={() => setSelectedChannel(channel)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors",
+                      selectedChannel?.id === channel.id
+                        ? "bg-chat-sidebar-active"
+                        : "hover:bg-chat-sidebar-hover"
+                    )}
+                    title={`Owner: ${channel.owner}${channel.usersCount ? ` | ${channel.usersCount} members` : ''}${channel.topic ? ` | ${channel.topic}` : ''}`}
+                  >
+                    <div className={cn("flex h-8 w-8 items-center justify-center rounded text-sm font-bold text-white", getAvatarBg(channel.color))}>
+                      {channel.avatar}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{channel.name}</span>
+                      {channel.isPrivate && (
+                        <span className="text-xs text-muted-foreground">🔒</span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 

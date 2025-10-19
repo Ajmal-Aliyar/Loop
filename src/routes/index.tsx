@@ -5,6 +5,8 @@ import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 import Home from '@/pages/Home';
 import Users from '@/pages/Users';
+import VoiceCall from '@/pages/VoiceCall';
+import VideoCall from '@/pages/VideoCall';
 // import Chat from '@/pages/Chat';
 // import Home from '@/pages/Home';
 
@@ -33,6 +35,30 @@ export const protectedRoutes: RouteObject[] = [
     element: (
       // <ProtectedRoute>
         <Users />
+      // </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/users',
+    element: (
+      // <ProtectedRoute>
+        <Users />
+      // </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/voice-call',
+    element: (
+      // <ProtectedRoute>
+        <VoiceCall />
+      // </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/video-call',
+    element: (
+      // <ProtectedRoute>
+        <VideoCall />
       // </ProtectedRoute>
     ),
   },

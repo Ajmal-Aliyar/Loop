@@ -10,6 +10,7 @@ interface ChannelState {
   // Actions
   setSelectedChannel: (channel: IChannel | null) => void;
   fetchChannels: () => Promise<void>;
+  initializeChannels: () => Promise<void>;
 }
 
 export const useChannelStore = create<ChannelState>((set) => ({
@@ -44,6 +45,13 @@ export const useChannelStore = create<ChannelState>((set) => ({
         error: error.message || 'Failed to fetch channels',
         loading: false,
       });
+    }
+  },
+
+  initializeChannels: async () => {
+    const { channels, loading } = useChannelStore.getState();
+    if (channels.length === 0 && !loading) {
+      await useChannelStore.getState().fetchChannels();
     }
   },
 }));

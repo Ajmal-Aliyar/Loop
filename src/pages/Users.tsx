@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NewUserForm } from '@/components/NewUserForm';
-import { ManageUserRolesDialog } from '@/components/ManageUserRolesDialog';
 import {
     Table,
     TableBody,
@@ -33,6 +32,7 @@ import { roleService } from '@/api/roles/role.service';
 import type { User } from '@/api/users/user.types';
 import type { Role } from '@/api/roles/role.types';
 import { InviteUserDialog } from '@/components/InviteUserDialog';
+import { ManageUserRolesDialog } from '@/components/ManageUserRolesDialog';
 
 const Users = () => {
     const { toast } = useToast();
