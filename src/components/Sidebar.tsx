@@ -238,7 +238,7 @@ export const Sidebar = () => {
                         type: 'team',
                         avatar: team.name.charAt(0).toUpperCase(),
                         unread: 0,
-                        owner: team.createdBy.username,
+                        // owner: team.createdBy.username,
                         status: undefined,
                         topic: '',
                         usersCount: team.numberOfUsers || 0,
