@@ -3,7 +3,6 @@
 **Loop** is a modern, real-time collaboration platform built for teams to stay connected, communicate instantly, and organize their work seamlessly.  
 Whether you're working remotely or in-office, Loop helps your team stay **in sync** — through messages, channels, threads, and teams.
 
----
 
 ## 🚀 Features
 
